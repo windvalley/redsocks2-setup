@@ -10,7 +10,7 @@
 
 * 提前编译好redsocks2可执行文件
  
-```shell
+```bash
 yum install libevent2-devel openssl-devel -y
 wget https://github.com/semigodking/redsocks/archive/release-0.66.zip
 unzip release-0.66
