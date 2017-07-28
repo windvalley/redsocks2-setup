@@ -38,8 +38,7 @@ make -j $(grep -c processor /proc/cpuinfo)
     > bash socks_transparent_proxy_setup.sh
 
 ## 使用说明
-
-# 默认安装后的路径：/usr/local/redsocks2/,相关文件说明如下
+### 安装后的默认路径：/usr/local/redsocks2/, 目录中相关文件说明如下
 * err.log    redsocks2的debug日志
 * log/access.log   用户访问的日志
 * log/logrotate.sh 用户日志每日轮转脚本
