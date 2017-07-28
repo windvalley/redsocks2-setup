@@ -10,13 +10,13 @@
 
 * 提前编译好redsocks2可执行文件
  
-'''shell
+```shell
 yum install libevent2-devel openssl-devel -y
 wget https://github.com/semigodking/redsocks/archive/release-0.66.zip
 unzip release-0.66
 cd redsocks-release-0.66
 make -j $(grep -c processor /proc/cpuinfo) 
-'''
+```
 
 * 根据实际情况修改socks_transparent_proxy_setup.sh前置的几个变量
     > prefix_dir=/usr/local/redsocks2	安装路径
