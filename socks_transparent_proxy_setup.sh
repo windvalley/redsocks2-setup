@@ -54,12 +54,12 @@ base {
         daemon = on;
         redirector = iptables;
 }
-$(
-for ip in $socks_server;do
-	server=$(echo $ip|awk -F: '{print $1}')
-	port=$(echo $ip|awk -F: '{print $2}')
-cat <<COM
 
+$(
+for server in $socks_server;do
+	ip=$(echo $server|awk -F: '{print $1}')
+	port=$(echo $server|awk -F: '{print $2}')
+	cat <<COM
 redsocks {
         //private ip for redsocks2 server; not set 127.0.0.1 if you set this machine as gateway;
         local_ip = $redsocks_server_ip;
@@ -67,7 +67,7 @@ redsocks {
         min_accept_backoff = 100;
         max_accept_backoff = 60000;
         //remote socks proxy server
-        ip = $server;
+        ip = $ip;
         port = $port;
         type = socks5;
         timeout = 10;
@@ -78,7 +78,7 @@ redudp {
         local_ip = $redsocks_server_ip;
         local_port = $redsocks_udp_port;
         // remote socks proxy server
-        ip = $server;
+        ip = $ip;
         port = $port;
         type = socks5;
         udp_timeout = 10;
