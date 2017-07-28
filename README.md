@@ -53,7 +53,7 @@ make -j $(grep -c processor /proc/cpuinfo)
   
   > err.log    redsocks2的debug日志
 
-
+>> 启用服务： ./redsocks2.service start
 
 
 
