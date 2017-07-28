@@ -39,21 +39,21 @@ make -j $(grep -c processor /proc/cpuinfo)
 
 ## 使用说明
 
->> 安装后的默认路径：/usr/local/redsocks2/, 目录中相关文件说明如下
+> 安装后的默认路径：/usr/local/redsocks2/, 目录中相关文件说明如下
   
-  > log/access.log   用户访问的日志
+  >> redsocks2  redsocks2程序
   
-  > log/logrotate.sh 用户日志每日轮转脚本
+  >> redsocks2.service  整个服务的启动、关闭、重启、状态查看脚本
   
-  > redsocks2  redsocks2程序
+  >> redsocks.conf redsocks2的配置文件
   
-  > redsocks2.service  整个服务的启动、关闭、重启、状态查看脚本
+  >> log/access.log   用户访问的日志
   
-  > redsocks.conf redsocks2的配置文件
+  >> log/logrotate.sh 用户日志每日轮转脚本
   
-  > err.log    redsocks2的debug日志
+  >> err.log    redsocks2的debug日志
 
->> 启用服务： ./redsocks2.service start
+> 启用服务： ./redsocks2.service start
 
 
 
