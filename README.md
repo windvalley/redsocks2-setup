@@ -19,6 +19,7 @@ make -j $(grep -c processor /proc/cpuinfo)
 ```
 
 * 根据实际情况修改socks_transparent_proxy_setup.sh前置的几个变量
+
     > prefix_dir=/usr/local/redsocks2	安装路径
 
     > logdir=$prefix_dir/log	用户访问日志路径
@@ -39,25 +40,19 @@ make -j $(grep -c processor /proc/cpuinfo)
 
 ## 使用说明
 
-> 安装后的默认路径：/usr/local/redsocks2/, 目录中相关文件说明如下
+    > 安装后的默认路径：/usr/local/redsocks2/, 目录中相关文件说明如下
 
-    >> redsocks2  redsocks2程序
+        >> redsocks2  redsocks2程序
   
-    >> redsocks2.service  整个服务的启动、关闭、重启、状态查看脚本
+        >> redsocks2.service  整个服务的启动、关闭、重启、状态查看脚本
   
-    >> redsocks.conf redsocks2的配置文件
+        >> redsocks.conf redsocks2的配置文件
   
-    >> log/access.log   用户访问的日志
+        >> log/access.log   用户访问的日志
   
-    >> log/logrotate.sh 用户日志每日轮转脚本
+        >> log/logrotate.sh 用户日志每日轮转脚本
   
-    >> err.log    redsocks2的debug日志
+        >> err.log    redsocks2的debug日志
 
- > 启用服务： ./redsocks2.service start
-
-
-
-
-
-
+    > 启用服务： ./redsocks2.service start
 
