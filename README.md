@@ -18,7 +18,7 @@ cd redsocks-release-0.66
 make -j $(grep -c processor /proc/cpuinfo) 
 ```
 
-* 根据实际情况修改socks_transparent_proxy_setup.sh前置的几个变量
+* 根据实际情况修改transparent_socks5proxy_redirector_setup.sh前置的几个变量
 
     > prefix_dir=/usr/local/redsocks2	安装路径
 
