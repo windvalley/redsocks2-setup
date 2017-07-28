@@ -1,4 +1,4 @@
-##应用场景
+## 应用场景
 
 * 把redsocks2部署在网关服务器，让用户无感知使用socks5代理上网，即透明代理；网关服务器需要同时有内网和外网IP
 
@@ -36,6 +36,21 @@ make -j $(grep -c processor /proc/cpuinfo)
 * 执行安装脚本
 
     > bash socks_transparent_proxy_setup.sh
+
+## 使用说明
+
+# 默认安装后的路径：/usr/local/redsocks2/,相关文件说明如下
+* err.log    redsocks2的debug日志
+* log/access.log   用户访问的日志
+* log/logrotate.sh 用户日志每日轮转脚本
+* redsocks2  redsocks2程序
+* redsocks2.service  整个服务的启动、关闭、重启、状态查看脚本
+* redsocks.conf redsocks2的配置文件
+
+
+
+
+
 
 
 
