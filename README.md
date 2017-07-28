@@ -32,11 +32,11 @@ make -j $(grep -c processor /proc/cpuinfo)
 
     > redsocks_udp_port=20001	redsocks2用于接收UDP包的监听端口
 
-    > socks_server="101.19.11.60:1080 12.5.11.27:1080"	redsocks2将数据包转发给后端的socks5代理服务器列表（或socks5代理服务器均衡器），可以是一个，多个的话使用空格分隔
+    > socks_server="101.19.11.60:1080 12.5.11.27:1080"	redsocks2将封装后的数据包转发给后端的socks5代理服务器列表（或socks5代理负载均衡器,或tcp转发器），可以是一个，多个的话使用空格分隔
 
 * 执行安装脚本
 
-    > bash socks_transparent_proxy_setup.sh
+    > bash transparent_socks5proxy_redirector_setup.sh 
 
 ## 使用说明
 
