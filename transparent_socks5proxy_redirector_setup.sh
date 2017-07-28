@@ -1,17 +1,19 @@
 #!/bin/bash
-# socks_transparent_proxy_setup.sh 
+# transparent_socks5proxy_redirector_setup.sh 
 # 2017/7/28
 
-# this script implements tansparent proxy "resocks2" as follows
-#                  redsocks2
-#                      |
-#	     _ _ _ _ _ _ _ _ _ _
-#	    |socks load balancer|   
-#	     - - - - - - - - - -
-#	     /       \         \ 
-#    _ _ _ _ _ _    _ _ _ _ _ _
-#   |socks proxy|  |socks proxy|   ......
-#    - - - - - -    - - - - - -    
+# this script implements a {tansparent redirector} as follow architecture, 
+# that encapsulate TCP/UDP packets with socks5 header and then redirect them to socks5 proxy servers.
+#
+#         {transparent redirector}
+#                     |
+#	     _ _ _ _ _ _ _ _ _ 
+#	    |tcp load balancer|   
+#	     - - - - - - - - - 
+#	    /       \         \ 
+#    _ _ _ _ _ _   _ _ _ _ _ _
+#   |socks5proxy| |socks5proxy|  ......
+#    - - - - - -   - - - - - -    
 
 set -u
 
@@ -224,5 +226,9 @@ EOF
 
 chmod u+x redsocks2.service
 
+echo "SETUP SUCCESS!
+Use $prefix_dir/redsocks2.service to manage the server:
+$prefix_dir/redsocks2.service <start|stop|restart|status>
+"
 
 exit 0
