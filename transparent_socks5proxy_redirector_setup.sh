@@ -106,12 +106,12 @@ iptables -t mangle -F
 iptables -t mangle -Z
 iptables -t mangle -X
 
-# Create new chain
+# create new chain
 iptables -t nat -N REDSOCKS2
 iptables -t mangle -N REDSOCKS2
 iptables -t mangle -N REDSOCKS2_MARK
 
-# Ignore LANs and some other addresses 
+# ignore LANs and some other addresses 
 iptables -t nat -A REDSOCKS2 -d 0.0.0.0/8 -j RETURN
 iptables -t nat -A REDSOCKS2 -d 10.0.0.0/8 -j RETURN
 iptables -t nat -A REDSOCKS2 -d 127.0.0.0/8 -j RETURN
@@ -121,12 +121,15 @@ iptables -t nat -A REDSOCKS2 -d 192.168.0.0/16 -j RETURN
 iptables -t nat -A REDSOCKS2 -d 224.0.0.0/4 -j RETURN
 iptables -t nat -A REDSOCKS2 -d 240.0.0.0/4 -j RETURN
 
+# ignore local addresses
+iptables -t nat -A REDSOCKS2 -d $(ifconfig |awk '/inet addr/{print $2}'|awk -F: '{print $2}'|xargs  |sed 's/ /,/g') -j RETURN
+
 # ignore your remote socks proxy server's addresses 
 iptables -t nat -A REDSOCKS2 -d $(echo $socks_server|egrep -o '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'|xargs |sed 's/ /,/') -j RETURN
 
 # for tcp
 for ((i=$(echo $socks_server|xargs -n1|wc -l);i>=1;i--)){
-	iptables -t nat -A REDSOCKS2 -p tcp ! --dport 22 -m statistic --mode nth --every $i --packet 0 -j REDIRECT --to-ports $redsocks_tcp_port
+	iptables -t nat -A REDSOCKS2 -p tcp -m statistic --mode nth --every $i --packet 0 -j REDIRECT --to-ports $redsocks_tcp_port
 	((redsocks_tcp_port++))
 }
 iptables -t nat -A PREROUTING -p tcp -j REDSOCKS2
