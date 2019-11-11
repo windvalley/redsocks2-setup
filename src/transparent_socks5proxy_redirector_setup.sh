@@ -1,24 +1,24 @@
 #!/bin/bash
-# transparent_socks5proxy_redirector_setup.sh 
+# transparent_socks5proxy_redirector_setup.sh
 # 2017/7/28
 
-# this script implements a {tansparent redirector} as follow architecture, 
+# this script implements a {tansparent redirector} as follow architecture,
 # that encapsulate TCP/UDP packets with socks5 header and then redirect them to socks5 proxy servers.
 #
 #         {transparent redirector}
 #                     |
-#	     _ _ _ _ _ _ _ _ _ 
-#	    |tcp load balancer|   
-#	     - - - - - - - - - 
-#	    /       \         \ 
+#        _ _ _ _ _ _ _ _ _
+#       |tcp load balancer|
+#        - - - - - - - - -
+#       /       \         \
 #    _ _ _ _ _ _   _ _ _ _ _ _
 #   |socks5proxy| |socks5proxy|  ......
-#    - - - - - -   - - - - - -    
+#    - - - - - -   - - - - - -
 
 set -u
 
 workdir=$(cd $(dirname $0) && pwd)
-redsocks2_bin=$workdir/redsocks-release-0.66/redsocks2 
+redsocks2_bin=$workdir/redsocks-release-0.66/redsocks2
 prefix_dir=/usr/local/redsocks2
 logdir=$prefix_dir/log
 logsavedays=300
@@ -37,7 +37,7 @@ yum install libevent2-devel openssl-devel -y
 wget https://github.com/semigodking/redsocks/archive/release-0.66.zip
 unzip release-0.66
 cd redsocks-release-0.66
-make -j $(grep -c processor /proc/cpuinfo) 
+make -j $(grep -c processor /proc/cpuinfo)
 COMPILE
 
 [ ! -f $redsocks2_bin ] && { echo "err: redsocks2 not exist,build redsocks2 first.";exit 1;}
@@ -111,7 +111,7 @@ iptables -t nat -N REDSOCKS2
 iptables -t mangle -N REDSOCKS2
 iptables -t mangle -N REDSOCKS2_MARK
 
-# ignore LANs and some other addresses 
+# ignore LANs and some other addresses
 iptables -t nat -A REDSOCKS2 -d 0.0.0.0/8 -j RETURN
 iptables -t nat -A REDSOCKS2 -d 10.0.0.0/8 -j RETURN
 iptables -t nat -A REDSOCKS2 -d 127.0.0.0/8 -j RETURN
@@ -124,7 +124,7 @@ iptables -t nat -A REDSOCKS2 -d 240.0.0.0/4 -j RETURN
 # ignore local addresses
 iptables -t nat -A REDSOCKS2 -d $(ifconfig |awk '/inet addr/{print $2}'|awk -F: '{print $2}'|xargs  |sed 's/ /,/g') -j RETURN
 
-# ignore your remote socks proxy server's addresses 
+# ignore your remote socks proxy server's addresses
 iptables -t nat -A REDSOCKS2 -d $(echo $socks_server|egrep -o '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'|xargs |sed 's/ /,/') -j RETURN
 
 # for tcp
@@ -155,7 +155,7 @@ iptables -t nat -I POSTROUTING -j LOG --log-prefix 'IPTABLES_LOG:' --log-level d
 # iptables-save
 iptables-save > /etc/sysconfig/iptables
 
-# set iptables log 
+# set iptables log
 mkdir -p $logdir
 grep -q '^kern\.\*' /etc/rsyslog.conf &&
     sed -i "s#^kern\.\*.*#kern.* $logdir/access.log#" /etc/rsyslog.conf ||
@@ -165,9 +165,9 @@ grep -q '^kern\.\*' /etc/rsyslog.conf &&
 cat >$logdir/logrotate.sh<<EOF
 #!/bin/bash
 # log rotate
-/bin/mv $logdir/access.log{,.\$(/bin/date +%Y%m%d)} 
+/bin/mv $logdir/access.log{,.\$(/bin/date +%Y%m%d)}
 /etc/init.d/rsyslog reload
-/bin/find $logdir -type f -mtime $logsavedays -exec rm -f {} \; 
+/bin/find $logdir -type f -mtime $logsavedays -exec rm -f {} \;
 exit 0
 EOF
 
@@ -186,7 +186,7 @@ cat > redsocks2.service <<EOF
 
 start(){
     /etc/init.d/iptables start
-    ps aux|egrep -v "grep|\$0" |grep -q redsocks2 && { 
+    ps aux|egrep -v "grep|\$0" |grep -q redsocks2 && {
         echo -n "redsocks2 already started";failure;echo;} || {
             $prefix_dir/redsocks2 -c $prefix_dir/redsocks.conf && { echo -n "redsocks2 started";success;echo;}
         }
@@ -199,18 +199,18 @@ stop(){
 }
 
 status(){
-    ps axu|egrep -v "grep|\$0" |grep -q redsocks2 && 
+    ps axu|egrep -v "grep|\$0" |grep -q redsocks2 &&
         echo "redsocks2 is running..."||
             echo "redsocks2 has stopped."
-    iptables -t nat -nvL|egrep -q "REDIRECT.*$redsocks_tcp_port" && 
-        echo "iptables for tcp redirect is ok" || 
+    iptables -t nat -nvL|egrep -q "REDIRECT.*$redsocks_tcp_port" &&
+        echo "iptables for tcp redirect is ok" ||
             echo "iptables for tcp redirect is err"
-    iptables -t mangle -nvL|egrep -q "TPROXY.*$redsocks_udp_port" && 
-        echo "iptables for udp redirect is ok" || 
+    iptables -t mangle -nvL|egrep -q "TPROXY.*$redsocks_udp_port" &&
+        echo "iptables for udp redirect is ok" ||
             echo "iptables for udp redirect is err"
 }
 
-case \$1 in 
+case \$1 in
     start) start
         ;;
     stop) stop
