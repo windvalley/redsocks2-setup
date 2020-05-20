@@ -17,19 +17,23 @@
 
 set -u
 
-workdir=$(cd $(dirname $0) && pwd)
-redsocks2_bin=$workdir/redsocks-release-0.66/redsocks2
-prefix_dir=/usr/local/redsocks2
-logdir=$prefix_dir/log
-logsavedays=300
-# should be local private ip
-redsocks_server_ip=192.168.1.254
-redsocks_tcp_port=10001
-redsocks_udp_port=20001
-# socks load balance server or socks proxy server
-socks_server="101.19.11.60:1080 12.5.11.27:1080"
 
-cd $workdir
+WORKDIR=$(cd $(dirname $0) && pwd)
+REDSOCKS2_BIN=$WORKDIR/redsocks-release-0.66/redsocks2
+PREFIX_DIR=/usr/local/redsocks2
+LOGDIR=$PREFIX_DIR/log
+LOG_SAVE_DAYS=300
+
+# should be local private ip
+REDSOCKS_SERVER_IP=192.168.1.254
+REDSOCKS_TCP_PORT=10001
+REDSOCKS_UDP_PORT=20001
+# socks load balance server or socks proxy server
+SOCKS_SERVER="101.19.11.60:1080 12.5.11.27:1080"
+
+
+cd $WORKDIR
+
 
 # build redsocks2 first
 <<'COMPILE'
@@ -40,11 +44,16 @@ cd redsocks-release-0.66
 make -j $(grep -c processor /proc/cpuinfo)
 COMPILE
 
-[ ! -f $redsocks2_bin ] && { echo "err: redsocks2 not exist,build redsocks2 first.";exit 1;}
-mkdir -p $prefix_dir
-\cp $redsocks2_bin $prefix_dir
 
-cd $prefix_dir
+[[ ! -f $REDSOCKS2_BIN ]] && {
+    echo "err: redsocks2 not exist,build redsocks2 first."
+    exit 1
+}
+
+mkdir -p $PREFIX_DIR
+\cp $REDSOCKS2_BIN $PREFIX_DIR
+
+cd $PREFIX_DIR
 
 # ------------------------------ redsocks.conf -----------------------------
 cat > redsocks.conf <<EOF
@@ -52,20 +61,20 @@ base {
         log_debug = off;
         log_info = on;
         //log = stderr;
-        log = "file:$prefix_dir/err.log";
+        log = "file:$PREFIX_DIR/err.log";
         daemon = on;
         redirector = iptables;
 }
 
 $(
-for server in $socks_server;do
-	ip=$(echo $server|awk -F: '{print $1}')
-	port=$(echo $server|awk -F: '{print $2}')
-	cat <<COM
+    for server in $SOCKS_SERVER;do
+        ip=$(echo $server|awk -F: '{print $1}')
+        port=$(echo $server|awk -F: '{print $2}')
+        cat <<COM
 redsocks {
         //private ip for redsocks2 server; not set 127.0.0.1 if you set this machine as gateway;
-        local_ip = $redsocks_server_ip;
-        local_port = $redsocks_tcp_port;
+        local_ip = $REDSOCKS_SERVER_IP;
+        local_port = $REDSOCKS_TCP_PORT;
         min_accept_backoff = 100;
         max_accept_backoff = 60000;
         //remote socks proxy server
@@ -77,8 +86,8 @@ redsocks {
 
 redudp {
         // private ip for redsocks2 server;
-        local_ip = $redsocks_server_ip;
-        local_port = $redsocks_udp_port;
+        local_ip = $REDSOCKS_SERVER_IP;
+        local_port = $REDSOCKS_UDP_PORT;
         // remote socks proxy server
         ip = $ip;
         port = $port;
@@ -86,9 +95,9 @@ redudp {
         udp_timeout = 10;
 }
 COM
-	((redsocks_tcp_port++))
-	((redsocks_udp_port++))
-done
+        ((REDSOCKS_TCP_PORT++))
+        ((REDSOCKS_UDP_PORT++))
+    done
 )
 
 EOF
@@ -122,16 +131,20 @@ iptables -t nat -A REDSOCKS2 -d 224.0.0.0/4 -j RETURN
 iptables -t nat -A REDSOCKS2 -d 240.0.0.0/4 -j RETURN
 
 # ignore local addresses
-iptables -t nat -A REDSOCKS2 -d $(ifconfig |awk '/inet addr/{print $2}'|awk -F: '{print $2}'|xargs  |sed 's/ /,/g') -j RETURN
+iptables -t nat -A REDSOCKS2 -d $(ifconfig |awk '/inet addr/{print $2}'|
+    awk -F: '{print $2}'|xargs  |sed 's/ /,/g') -j RETURN
 
 # ignore your remote socks proxy server's addresses
-iptables -t nat -A REDSOCKS2 -d $(echo $socks_server|egrep -o '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'|xargs |sed 's/ /,/') -j RETURN
+iptables -t nat -A REDSOCKS2 -d $(echo $SOCKS_SERVER|
+    egrep -o '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'|xargs |sed 's/ /,/') -j RETURN
 
 # for tcp
-for ((i=$(echo $socks_server|xargs -n1|wc -l);i>=1;i--)){
-	iptables -t nat -A REDSOCKS2 -p tcp -m statistic --mode nth --every $i --packet 0 -j REDIRECT --to-ports $redsocks_tcp_port
-	((redsocks_tcp_port++))
+for ((i=$(echo $SOCKS_SERVER|xargs -n1|wc -l);i>=1;i--)){
+	iptables -t nat -A REDSOCKS2 -p tcp -m statistic --mode nth --every $i \
+        --packet 0 -j REDIRECT --to-ports $REDSOCKS_TCP_PORT
+	((REDSOCKS_TCP_PORT++))
 }
+
 iptables -t nat -A PREROUTING -p tcp -j REDSOCKS2
 
 # for udp
@@ -140,12 +153,15 @@ ip rule del fwmark 1 lookup 100
 ip route add local default dev lo table 100
 ip rule add fwmark 1 lookup 100
 
-for ((i=$(echo $socks_server|xargs -n1|wc -l);i>=1;i--)){
-	iptables -t mangle -A REDSOCKS2 -p udp -m multiport --dports 1:10000 -m statistic --mode nth --every $i --packet 0 -j TPROXY --on-port $redsocks_udp_port --tproxy-mark 1
-	((redsocks_udp_port++))
+for ((i=$(echo $SOCKS_SERVER|xargs -n1|wc -l);i>=1;i--)){
+	iptables -t mangle -A REDSOCKS2 -p udp -m multiport --dports 1:10000 \
+        -m statistic --mode nth --every $i --packet 0 \
+        -j TPROXY --on-port $REDSOCKS_UDP_PORT --tproxy-mark 1
+	((REDSOCKS_UDP_PORT++))
 }
 iptables -t mangle -A PREROUTING -p udp -j REDSOCKS2
-iptables -t mangle -A REDSOCKS2_MARK -p udp -m multiport --dports 1:10000 -j MARK --set-mark 1
+iptables -t mangle -A REDSOCKS2_MARK -p udp -m multiport --dports 1:10000 \
+    -j MARK --set-mark 1
 iptables -t mangle -A OUTPUT -p udp -j REDSOCKS2_MARK
 
 # log
@@ -156,28 +172,29 @@ iptables -t nat -I POSTROUTING -j LOG --log-prefix 'IPTABLES_LOG:' --log-level d
 iptables-save > /etc/sysconfig/iptables
 
 # set iptables log
-mkdir -p $logdir
+mkdir -p $LOGDIR
 grep -q '^kern\.\*' /etc/rsyslog.conf &&
-    sed -i "s#^kern\.\*.*#kern.* $logdir/access.log#" /etc/rsyslog.conf ||
-        echo "kern.* $logdir/access.log" >>/etc/rsyslog.conf
+    sed -i "s#^kern\.\*.*#kern.* $LOGDIR/access.log#" /etc/rsyslog.conf ||
+        echo "kern.* $LOGDIR/access.log" >>/etc/rsyslog.conf
 /etc/init.d/rsyslog restart
 
-cat >$logdir/logrotate.sh<<EOF
+cat >$LOGDIR/logrotate.sh<<EOF
 #!/bin/bash
 # log rotate
-/bin/mv $logdir/access.log{,.\$(/bin/date +%Y%m%d)}
+/bin/mv $LOGDIR/access.log{,.\$(/bin/date +%Y%m%d)}
 /etc/init.d/rsyslog reload
-/bin/find $logdir -type f -mtime $logsavedays -exec rm -f {} \;
+/bin/find $LOGDIR -type f -mtime $LOG_SAVE_DAYS -exec rm -f {} \;
 exit 0
 EOF
 
-chmod u+x $logdir/logrotate.sh
-grep -q "$logdir/logrotate.sh" /var/spool/cron/root || echo "0 0 * * * $logdir/logrotate.sh" >>/var/spool/cron/root
+chmod u+x $LOGDIR/logrotate.sh
+grep -q "$LOGDIR/logrotate.sh" /var/spool/cron/root ||
+    echo "0 0 * * * $LOGDIR/logrotate.sh" >>/var/spool/cron/root
 
 
 # --------------------------- redsocks.service ------------------
-((redsocks_tcp_port--))
-((redsocks_udp_port--))
+((REDSOCKS_TCP_PORT--))
+((REDSOCKS_UDP_PORT--))
 
 cat > redsocks2.service <<EOF
 #!/bin/bash
@@ -188,7 +205,7 @@ start(){
     /etc/init.d/iptables start
     ps aux|egrep -v "grep|\$0" |grep -q redsocks2 && {
         echo -n "redsocks2 already started";failure;echo;} || {
-            $prefix_dir/redsocks2 -c $prefix_dir/redsocks.conf && { echo -n "redsocks2 started";success;echo;}
+            $PREFIX_DIR/redsocks2 -c $PREFIX_DIR/redsocks.conf && { echo -n "redsocks2 started";success;echo;}
         }
 }
 
@@ -202,10 +219,10 @@ status(){
     ps axu|egrep -v "grep|\$0" |grep -q redsocks2 &&
         echo "redsocks2 is running..."||
             echo "redsocks2 has stopped."
-    iptables -t nat -nvL|egrep -q "REDIRECT.*$redsocks_tcp_port" &&
+    iptables -t nat -nvL|egrep -q "REDIRECT.*$REDSOCKS_TCP_PORT" &&
         echo "iptables for tcp redirect is ok" ||
             echo "iptables for tcp redirect is err"
-    iptables -t mangle -nvL|egrep -q "TPROXY.*$redsocks_udp_port" &&
+    iptables -t mangle -nvL|egrep -q "TPROXY.*$REDSOCKS_UDP_PORT" &&
         echo "iptables for udp redirect is ok" ||
             echo "iptables for udp redirect is err"
 }
@@ -224,14 +241,13 @@ case \$1 in
 esac
 
 exit 0
-
 EOF
 
 chmod u+x redsocks2.service
 
 echo "SETUP SUCCESS!
-Use $prefix_dir/redsocks2.service to manage the server:
-$prefix_dir/redsocks2.service <start|stop|restart|status>
+Use $PREFIX_DIR/redsocks2.service to manage the server:
+$PREFIX_DIR/redsocks2.service <start|stop|restart|status>
 "
 
 exit 0
